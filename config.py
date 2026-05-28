@@ -8,7 +8,7 @@ if not BOT_TOKEN:
     raise ValueError("BOT_TOKEN is not set! Check your .env or Heroku config vars.")
 
 WEBHOOK_URL: str = os.environ.get("WEBHOOK_URL", "")
-PORT: int = int(os.environ.get("PORT", 8443))
+PORT: int = int(os.environ.get("PORT", 5000))
 
 MAX_FILE_SIZE: int = 50 * 1024 * 1024  # 50 MB
 
