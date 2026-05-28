@@ -186,11 +186,12 @@ def main():
     app.add_handler(MessageHandler(filters.Document.ALL & filters.ChatType.PRIVATE, handle_document))
 
     if WEBHOOK_URL:
+        clean_url = WEBHOOK_URL.rstrip("/")
         logger.info("Starting webhook on port %s", PORT)
         app.run_webhook(
             listen="0.0.0.0",
             port=PORT,
-            webhook_url=f"{WEBHOOK_URL}/{BOT_TOKEN}",
+            webhook_url=f"{clean_url}/{BOT_TOKEN}",
             url_path=BOT_TOKEN,
         )
     else:
