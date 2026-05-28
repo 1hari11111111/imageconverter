@@ -18,6 +18,7 @@ from config import (
     SUPPORTED_VIDEO_MIMES,
     MEDIA_GROUP_COLLECT_DELAY,
 )
+from auto_delete import schedule_auto_delete
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -89,33 +90,44 @@ async def process_group(
 
     all_media = photos + videos
     sent_ok = 0
+    sent_message_ids: list[int] = []
 
     for i in range(0, len(all_media), 10):
         chunk = all_media[i : i + 10]
         try:
-            await context.bot.send_media_group(chat_id=chat_id, media=chunk)
+            sent = await context.bot.send_media_group(chat_id=chat_id, media=chunk)
             sent_ok += len(chunk)
+            sent_message_ids.extend([m.message_id for m in sent])
         except TelegramError as e:
             logger.error("Send error: %s", e)
             skipped.append(f"❌ Failed to send a batch: {e}")
 
+    # Delete original document messages
     for msg_id in set(original_message_ids):
         try:
             await context.bot.delete_message(chat_id=chat_id, message_id=msg_id)
         except TelegramError as e:
             logger.warning("Could not delete message %s: %s", msg_id, e)
 
+    # Delete processing status message
     try:
         await context.bot.delete_message(chat_id=chat_id, message_id=status_message_id)
     except TelegramError:
         pass
 
+    # Send skip summary if any
     if skipped:
         summary = (
             f"✅ Converted {sent_ok}/{total} file(s).\n\n"
             + "\n".join(skipped)
         )
         await context.bot.send_message(chat_id=chat_id, text=summary, parse_mode="Markdown")
+
+    # Schedule auto-delete in background (won't block)
+    if sent_message_ids:
+        asyncio.create_task(
+            schedule_auto_delete(context, chat_id, sent_message_ids)
+        )
 
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -175,7 +187,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👋 Hello! Send me images or videos *as documents/files* and I'll convert them to normal media.\n\n"
         "✅ Supports: JPEG, PNG, WEBP, GIF, BMP, MP4, MKV, MOV, AVI, WEBM\n"
         "📦 Send multiple files at once — I'll handle them all!\n"
-        "⚠️ Max file size: 50 MB per file",
+        "⚠️ Max file size: 50 MB per file\n"
+        "🗑️ Converted files are auto-deleted after 5 minutes",
         parse_mode="Markdown",
     )
 
