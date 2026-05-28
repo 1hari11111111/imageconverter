@@ -1,4 +1,3 @@
-import os
 import asyncio
 import logging
 from collections import defaultdict
@@ -10,23 +9,21 @@ from telegram.ext import (
     ContextTypes,
 )
 from telegram.error import TelegramError
+from config import (
+    BOT_TOKEN,
+    WEBHOOK_URL,
+    PORT,
+    MAX_FILE_SIZE,
+    SUPPORTED_IMAGE_MIMES,
+    SUPPORTED_VIDEO_MIMES,
+    MEDIA_GROUP_COLLECT_DELAY,
+)
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
-
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "YOUR_BOT_TOKEN_HERE")
-MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
-
-SUPPORTED_IMAGE_MIMES = {
-    "image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp",
-}
-SUPPORTED_VIDEO_MIMES = {
-    "video/mp4", "video/mpeg", "video/quicktime", "video/x-msvideo",
-    "video/x-matroska", "video/webm",
-}
 
 media_group_buffer: dict[str, list] = defaultdict(list)
 media_group_tasks: dict[str, asyncio.Task] = {}
@@ -166,7 +163,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     status_message_id = context.chat_data.get(f"status_{group_key}")
 
     async def delayed_process():
-        await asyncio.sleep(1.5)
+        await asyncio.sleep(MEDIA_GROUP_COLLECT_DELAY)
         await process_group(context, chat.id, group_key, status_message_id)
 
     task = asyncio.create_task(delayed_process())
@@ -188,15 +185,12 @@ def main():
     app.add_handler(MessageHandler(filters.COMMAND & filters.Regex("^/start"), start))
     app.add_handler(MessageHandler(filters.Document.ALL & filters.ChatType.PRIVATE, handle_document))
 
-    port = int(os.environ.get("PORT", 8443))
-    webhook_url = os.environ.get("WEBHOOK_URL", "")
-
-    if webhook_url:
-        logger.info("Starting webhook on port %s", port)
+    if WEBHOOK_URL:
+        logger.info("Starting webhook on port %s", PORT)
         app.run_webhook(
             listen="0.0.0.0",
-            port=port,
-            webhook_url=f"{webhook_url}/{BOT_TOKEN}",
+            port=PORT,
+            webhook_url=f"{WEBHOOK_URL}/{BOT_TOKEN}",
             url_path=BOT_TOKEN,
         )
     else:
