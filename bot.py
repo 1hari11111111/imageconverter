@@ -191,7 +191,7 @@ def main():
             listen="0.0.0.0",
             port=PORT,
             webhook_url=f"{WEBHOOK_URL}/{BOT_TOKEN}",
-            url_path=BOT_TOKEN,
+            url_path=f"/{BOT_TOKEN}",
         )
     else:
         logger.info("Starting polling (local mode)")
