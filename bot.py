@@ -187,13 +187,12 @@ def main():
 
     if WEBHOOK_URL:
         logger.info("Starting webhook on port %s", PORT)
-  app.run_webhook(
-    listen="0.0.0.0",
-    port=PORT,
-    webhook_url=f"{WEBHOOK_URL}/{BOT_TOKEN}",
-    url_path=BOT_TOKEN,  # NO leading slash here
-    secret_token=None,
-)
+        app.run_webhook(
+            listen="0.0.0.0",
+            port=PORT,
+            webhook_url=f"{WEBHOOK_URL}/{BOT_TOKEN}",
+            url_path=BOT_TOKEN,
+        )
     else:
         logger.info("Starting polling (local mode)")
         app.run_polling()
