@@ -10,16 +10,6 @@ Converts images/videos sent as Telegram documents → normal viewable media.
 - 50 MB max per file with skip notification
 - Webhook mode for Heroku, polling mode for local
 
-## File Structure
-├── bot.py
-├── config.py
-├── requirements.txt
-├── Procfile
-├── runtime.txt
-├── .env.example
-├── .gitignore
-└── README.md
-
 
 ## Environment Variables
 | Variable     | Required    | Description                          |
